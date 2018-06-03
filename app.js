@@ -591,9 +591,8 @@ var SPEECH = (function() {
 
 var codeForm = document.getElementById("code-form");
 var codeEl = document.getElementById("code");
-codeEl.value =
-  '<h1>\'(&lambda; speech)</h1>\n<p><a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">Go to official site</a></p>\n<p class="text-muted">Press ` to view console.</p>\n\n(+ 1 2 3 4 5)\n\n(def pair (lambda (:x :y :z) (:z :x :y)))\n(def left (lambda (:z) (:z (lambda (:x :y) :x))))\n(def right (lambda (:z) (:z (lambda (:x :y) :y))))\n\n(def nil? (lambda (:n) (:n (lambda (:x) right) left)))\n(def nil (lambda (:f :x) :x))';
 var lastCode = "";
+var name = "default";
 
 var wsTimeout = null;
 
@@ -609,6 +608,7 @@ var deleteWhitespace = function() {
 
   codeEl.value = code;
   lastCode = code;
+  localStorage.setItem("ls-" + name, code);
 
   cursor = cursor + (code.length - startLen);
 
@@ -617,9 +617,9 @@ var deleteWhitespace = function() {
 };
 
 var refresh = function(e) {
-  var code = codeEl.value;
+  var text = codeEl.value;
 
-  if (code === lastCode) {
+  if (text === lastCode) {
     return;
   }
 
@@ -628,11 +628,9 @@ var refresh = function(e) {
     wsTimeout = null;
   }
 
-  codeEl.value = code;
-
-  lastCode = code;
+  lastCode = text;
   var t0 = new Date().getTime();
-  code = SPEECH.evaluate(code);
+  var code = SPEECH.evaluate(text);
   var t1 = new Date().getTime();
   document.getElementById("infos").innerHTML =
     "(" +
@@ -646,11 +644,12 @@ var refresh = function(e) {
 
   if (code.bal.left === code.bal.right) {
     document.getElementById("view").innerHTML = code.val;
+    localStorage.setItem("ls-" + name, text);
     wsTimeout = setTimeout(deleteWhitespace, 2000);
   }
 };
 
-codeForm.style.display = "none";
+//codeForm.style.display = "none";
 
 codeEl.addEventListener("keydown", function(e) {
   if (e.key === "`") {
@@ -667,9 +666,46 @@ document.body.addEventListener("keyup", function(e) {
 
   if (codeForm.style.display === "none") {
     codeForm.style.display = "";
+    codeEl.focus();
   } else {
+    codeEl.blur();
     codeForm.style.display = "none";
   }
 });
 
-setTimeout(refresh, 1); // display on page load
+var load = function() {
+  var code, hashName;
+
+  codeForm.reset();
+
+  lastCode = "";
+  hashName = window.location.hash.substr(1);
+
+  if (hashName === "") {
+    name = "default";
+  } else {
+    name = hashName;
+  }
+
+  if (wsTimeout !== null) {
+    clearTimeout(wsTimeout);
+    wsTimeout = null;
+  }
+
+  code = localStorage.getItem("ls-" + name);
+
+  if (code === null) {
+    code =
+      '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))';
+
+    localStorage.setItem("ls-" + name, code);
+  }
+
+  codeEl.innerHTML = code;
+
+  refresh();
+};
+
+setTimeout(load, 1); // display on page load
+
+window.addEventListener("hashchange", load);
