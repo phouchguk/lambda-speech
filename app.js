@@ -649,7 +649,7 @@ var refresh = function(e) {
   }
 };
 
-//codeForm.style.display = "none";
+codeForm.style.display = "none";
 
 codeEl.addEventListener("keydown", function(e) {
   if (e.key === "`") {
@@ -673,6 +673,7 @@ document.body.addEventListener("keyup", function(e) {
   }
 });
 
+// load different code for every 'page'
 var load = function() {
   var code, hashName;
 
@@ -696,7 +697,7 @@ var load = function() {
 
   if (code === null) {
     code =
-      '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))';
+      '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x)) (def my-pair (cons Hello World))<p>(cdr (my-pair))</p>';
 
     localStorage.setItem("ls-" + name, code);
   }
@@ -705,6 +706,25 @@ var load = function() {
 
   refresh();
 };
+
+if ("serviceWorker" in navigator) {
+  // enable offline working
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/sw.js").then(
+      function(registration) {
+        // Registration was successful
+        console.log(
+          "ServiceWorker registration successful with scope: ",
+          registration.scope
+        );
+      },
+      function(err) {
+        // registration failed :(
+        console.log("ServiceWorker registration failed: ", err);
+      }
+    );
+  });
+}
 
 setTimeout(load, 1); // display on page load
 
