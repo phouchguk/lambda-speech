@@ -606,26 +606,6 @@ var name = "default";
 
 var wsTimeout = null;
 
-var deleteWhitespace = function() {
-  var code = codeEl.value;
-  var cursor = codeEl.selectionStart;
-  var startLen = code.length;
-
-  code = code
-    .split("\n")
-    .map(x => x.trimRight())
-    .join("\n");
-
-  codeEl.value = code;
-  lastCode = code;
-  localStorage.setItem("ls-" + name, code);
-
-  cursor = cursor + (code.length - startLen);
-
-  codeEl.selectionStart = cursor;
-  codeEl.selectionEnd = cursor;
-};
-
 var refresh = function(e) {
   var text = codeEl.value;
 
@@ -655,7 +635,6 @@ var refresh = function(e) {
   if (code.bal.left === code.bal.right) {
     document.getElementById("view").innerHTML = code.val;
     localStorage.setItem("ls-" + name, text);
-    wsTimeout = setTimeout(deleteWhitespace, 2000);
   }
 };
 
@@ -708,7 +687,7 @@ var load = function() {
   if (code === null) {
     if (name === "default") {
       code =
-        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>';
+        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)';
 
       localStorage.setItem(
         "ls-test",
