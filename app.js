@@ -725,23 +725,22 @@ SPEECH.dict["sw-status"] = function() {
 if ("serviceWorker" in navigator) {
   // enable offline working
   window.addEventListener("load", function() {
-    navigator.serviceWorker
-      .register("./sw.js")
-      .then(
-        function(registration) {
-          // Registration was successful
-          swStatus = "ok";
-        },
-        function(err) {
-          // registration failed :(
-          swStatus = "ServiceWorker registration failed: " + err;
-        }
-      )
-      .then(load, load);
+    navigator.serviceWorker.register("./sw.js").then(
+      function(registration) {
+        // Registration was successful
+        swStatus = "ok";
+        load();
+      },
+      function(err) {
+        // registration failed :(
+        swStatus = "ServiceWorker registration failed: " + err;
+        load();
+      }
+    );
   });
 } else {
   swStatus = "unavailable";
+  document.addEventListener("DOMContentLoaded", load);
 }
 
 window.addEventListener("hashchange", load);
-//document.addEventListener("DOMContentLoaded", load);
