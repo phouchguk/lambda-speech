@@ -155,7 +155,7 @@ var SPEECH = (function() {
         return body;
       };
     }
-    return flag ? name : "";
+    return flag ? "_DEF_" : "";
   };
 
   /*
@@ -314,8 +314,8 @@ var SPEECH = (function() {
   var postprocessing = function(s) {
     s = s.replace(/(_QUOT_\d+?)/g, unquote);
 
-    // remove macro definition leftovers
-    s = s.replace(/(_MAC_\s*?)/g, "");
+    // remove mac/def leftovers
+    s = s.replace(/([_MAC_|_DEF_]\s*?)/g, "");
 
     //s = s.replace(/(_COND_\d+?)/g, cond_display);
     LAMB_num = 0;
