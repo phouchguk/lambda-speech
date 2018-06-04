@@ -7,6 +7,8 @@ var SPEECH = (function() {
   //  COND_num = 0;
   var PAIR = {},
     PAIR_num = 0;
+
+  var MAC = {};
   //var ARRA = {},
   //  ARRA_num = 0;
 
@@ -23,6 +25,15 @@ var SPEECH = (function() {
 
   var eval_special_forms = function(s, flag) {
     while (s !== (s = form_replace(s, "(quote", eval_quote)));
+    while (s !== (s = form_replace(s, "(mac", eval_mac)));
+
+    // perform macro expansion
+    for (var key in MAC) {
+      if (MAC.hasOwnProperty(key)) {
+        while (s !== (s = form_replace(s, "(" + key, expand_mac, MAC[key])));
+      }
+    }
+
     //while (s !== (s = form_replace(s, "(let", eval_let)));
     //while (s !== (s = form_replace(s, "(when", eval_when)));
     //while (s !== (s = form_replace(s, "(if", eval_if)));
@@ -44,6 +55,22 @@ var SPEECH = (function() {
     return dict.hasOwnProperty(f)
       ? dict[f].apply(null, [r])
       : "[" + f + " " + r + "]";
+  };
+
+  var eval_mac = function(s) {
+    // (mac name body)
+    var index = s.search(/\s/);
+    var name = s.substring(0, index).trim();
+    var body = s.substring(index).trim();
+
+    MAC[name] = body;
+
+    // to be removed in postprocessing
+    return "_MAC_";
+  };
+
+  var expand_mac = function(arg, macro) {
+    return evaluate("(" + macro + " " + arg + ")").val;
   };
 
   var eval_quote = function(s) {
@@ -286,6 +313,10 @@ var SPEECH = (function() {
   };
   var postprocessing = function(s) {
     s = s.replace(/(_QUOT_\d+?)/g, unquote);
+
+    // remove macro definition leftovers
+    s = s.replace(/(_MAC_\s*?)/g, "");
+
     //s = s.replace(/(_COND_\d+?)/g, cond_display);
     LAMB_num = 0;
     QUOT_num = 0;
@@ -687,7 +718,7 @@ var load = function() {
   if (code === null) {
     if (name === "default") {
       code =
-        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)';
+        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))';
 
       localStorage.setItem(
         "ls-test",
