@@ -60,22 +60,32 @@ var SPEECH = (function() {
       body = s.substring(index + 2).trim(),
       name = "_LAMB_" + LAMB_num++,
       reg_args = [];
-    for (var i = 0; i < args.length; i++) reg_args[i] = RegExp(args[i], "g");
+    for (var i = 0; i < args.length; i++)
+      reg_args[i] = new RegExp(args[i], "g");
     dict[name] = function() {
       var vals = supertrim(arguments[0]).split(" ");
       return (function(bod) {
-        var i;
+        var i, isRest, lastIndex;
+
         //bod = eval_conds(bod, reg_args, vals);
         if (vals.length < args.length) {
           // partial call
           for (i = 0; i < vals.length; i++)
             bod = bod.replace(reg_args[i], vals[i]);
+
           var _args_ = args.slice(vals.length).join(" ");
           bod = eval_lambda("(" + _args_ + ") " + bod);
         } else {
+          isRest = vals.length > args.length;
+          lastIndex = args.length - 1;
           // total call
-          for (i = 0; i < args.length; i++)
-            bod = bod.replace(reg_args[i], vals[i]);
+          for (i = 0; i < args.length; i++) {
+            if (isRest && i === lastIndex) {
+              bod = bod.replace(reg_args[i], vals.slice(i).join(" "));
+            } else {
+              bod = bod.replace(reg_args[i], vals[i]);
+            }
+          }
         }
         return eval_forms(bod);
       })(supertrim(body));
@@ -720,6 +730,12 @@ var swStatus = "checking";
 
 SPEECH.dict["sw-status"] = function() {
   return swStatus;
+};
+
+SPEECH.dict["page-exists?"] = function() {
+  var page = arguments[0].trim();
+
+  return localStorage.getItem("ls-" + page) === null ? "cdr" : "car";
 };
 
 if ("serviceWorker" in navigator) {
