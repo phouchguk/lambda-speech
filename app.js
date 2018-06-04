@@ -700,7 +700,7 @@ var load = function() {
       code =
         '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def my-pair (cons Hello World))\n\n<p>(cdr (my-pair))</p>';
     } else {
-      code = "<h1>" + name + "</h1>\n<p>This is a new '" + name + "' page.";
+      code = "<h1>" + name + "</h1>\n<p>This is a new '" + name + "' page.</p>";
     }
 
     localStorage.setItem("ls-" + name, code);
