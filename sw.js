@@ -1,6 +1,14 @@
 var CACHE_NAME = "my-site-cache-v1";
 
-var urlsToCache = ["./", "index.html", "app.js", "bootstrap.min.css"];
+var urlsToCache = [
+  "./",
+  "index.html",
+  "app.js",
+  "css/bootstrap.min.css",
+  "fonts/glyphicons-halflings-regular.woff2",
+  "fonts/glyphicons-halflings-regular.woff",
+  "fonts/glyphicons-halflings-regular.ttf"
+];
 
 self.addEventListener("install", function(event) {
   // Perform install steps

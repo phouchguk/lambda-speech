@@ -348,11 +348,11 @@ var SPEECH = (function() {
     var a = supertrim(arguments[0]).split(" ");
     var x = Number(a[0]),
       y = Number(a[1]);
-    return x < y ? "left" : "right";
+    return x < y ? "car" : "cdr";
   };
   dict["="] = function() {
     var a = supertrim(arguments[0]).split(" ");
-    return a[0] === a[1] ? "left" : "right";
+    return a[0] === a[1] ? "car" : "cdr";
   };
 
   var mathtags = [
@@ -698,7 +698,12 @@ var load = function() {
   if (code === null) {
     if (name === "default") {
       code =
-        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def my-pair (cons Hello World))\n\n<p>(cdr (my-pair))</p>';
+        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>';
+
+      localStorage.setItem(
+        "ls-test",
+        '<h1>Test page</h1>\n<p>This is the test page. Go back to <a href="#">home</a>.</p>\n<p><a href="#newpage">This page</a> doesn\'t exist yet. But if you click the link it will be created.</p>'
+      );
     } else {
       code = "<h1>" + name + "</h1>\n<p>This is a new '" + name + "' page.</p>";
     }
@@ -711,25 +716,32 @@ var load = function() {
   refresh();
 };
 
+var swStatus = "checking";
+
+SPEECH.dict["sw-status"] = function() {
+  return swStatus;
+};
+
 if ("serviceWorker" in navigator) {
   // enable offline working
   window.addEventListener("load", function() {
-    navigator.serviceWorker.register("./sw.js").then(
-      function(registration) {
-        // Registration was successful
-        console.log(
-          "ServiceWorker registration successful with scope: ",
-          registration.scope
-        );
-      },
-      function(err) {
-        // registration failed :(
-        console.log("ServiceWorker registration failed: ", err);
-      }
-    );
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then(
+        function(registration) {
+          // Registration was successful
+          swStatus = "ok";
+        },
+        function(err) {
+          // registration failed :(
+          swStatus = "ServiceWorker registration failed: " + err;
+        }
+      )
+      .then(load, load);
   });
+} else {
+  swStatus = "unavailable";
 }
 
-setTimeout(load, 1); // display on page load
-
 window.addEventListener("hashchange", load);
+//document.addEventListener("DOMContentLoaded", load);
