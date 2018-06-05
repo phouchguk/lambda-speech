@@ -5,8 +5,8 @@ var SPEECH = (function() {
     QUOT_num = 0;
   //var COND = {},
   //  COND_num = 0;
-  var PAIR = {},
-    PAIR_num = 0;
+  //var PAIR = {},
+  //  PAIR_num = 0;
 
   var MAC = {};
   //var ARRA = {},
@@ -315,10 +315,10 @@ var SPEECH = (function() {
     return s;
   };
   var postprocessing = function(s) {
-    s = s.replace(/(_QUOT_\d+)/g, unquote);
+    s = s.replace(/_QUOT_\d+/g, unquote);
 
     // remove mac/def leftovers
-    s = s.replace(/([_MAC_|_DEF_]\s*)/g, "");
+    s = s.replace(/(_MAC_|_DEF_)\s*/g, "");
 
     //s = s.replace(/(_COND_\d+?)/g, cond_display);
     //LAMB_num = 0;
