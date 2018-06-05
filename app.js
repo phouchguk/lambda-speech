@@ -83,14 +83,17 @@ var SPEECH = (function() {
     // (lambda (args) body)
     s = eval_special_forms(s);
     var index = s.indexOf(")"),
-      args = supertrim(s.substring(1, index)).split(" "),
+      argStr = supertrim(s.substring(1, index)),
+      args = argStr === "" ? [] : argStr.split(" "),
       body = s.substring(index + 2).trim(),
       name = "_LAMB_" + LAMB_num++,
       reg_args = [];
+
     for (var i = 0; i < args.length; i++)
       reg_args[i] = new RegExp(args[i], "g");
     dict[name] = function() {
-      var vals = supertrim(arguments[0]).split(" ");
+      var valStr = supertrim(arguments[0]);
+      var vals = valStr === "" ? [] : valStr.split(" ");
       return (function(bod) {
         var i, isRest, lastIndex;
 
