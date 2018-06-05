@@ -1,5 +1,6 @@
 var SPEECH = (function() {
-  var dict = {},
+  var core = {},
+    dict = null,
     LAMB_num = 0;
   var QUOT = {},
     QUOT_num = 0;
@@ -306,7 +307,7 @@ var SPEECH = (function() {
   */
 
   var preprocessing = function(s) {
-    //LAMB_num = 0;
+    LAMB_num = 0;
     QUOT_num = 0;
     //COND_num = 0;
     //PAIR_num = 0;
@@ -321,17 +322,18 @@ var SPEECH = (function() {
     s = s.replace(/(_MAC_|_DEF_)\s*/g, "");
 
     //s = s.replace(/(_COND_\d+?)/g, cond_display);
-    //LAMB_num = 0;
+    LAMB_num = 0;
     QUOT_num = 0;
     //COND_num = 0;
     //PAIR_num = 0;
     //ARRA_num = 0;
+
     return s;
   };
 
   //// DICTIONARY
 
-  dict["lib"] = function() {
+  core["lib"] = function() {
     var str = "",
       index = 0;
     for (var key in dict) {
@@ -345,21 +347,21 @@ var SPEECH = (function() {
 
   //// MATHS
 
-  dict["+"] = function() {
+  core["+"] = function() {
     var a = supertrim(arguments[0]).split(" ");
     for (var r = 0, i = 0; i < a.length; i++) {
       r += Number(a[i]);
     }
     return r;
   };
-  dict["*"] = function() {
+  core["*"] = function() {
     var a = supertrim(arguments[0]).split(" ");
     for (var r = 1, i = 0; i < a.length; i++) {
       r *= a[i];
     }
     return r;
   };
-  dict["-"] = function() {
+  core["-"] = function() {
     var a = supertrim(arguments[0]).split(" ");
     var r = a[0];
     if (a.length === 1) {
@@ -371,7 +373,7 @@ var SPEECH = (function() {
     }
     return r;
   };
-  dict["/"] = function() {
+  core["/"] = function() {
     var a = supertrim(arguments[0]).split(" ");
     var r = a[0];
     if (a.length === 1) {
@@ -383,18 +385,18 @@ var SPEECH = (function() {
     }
     return r;
   };
-  dict["%"] = function() {
+  core["%"] = function() {
     var a = supertrim(arguments[0]).split(" ");
     return Number(a[0]) % Number(a[1]);
   };
   ////
-  dict["<"] = function() {
+  core["<"] = function() {
     var a = supertrim(arguments[0]).split(" ");
     var x = Number(a[0]),
       y = Number(a[1]);
     return x < y ? "car" : "cdr";
   };
-  dict["="] = function() {
+  core["="] = function() {
     var a = supertrim(arguments[0]).split(" ");
     return a[0] === a[1] ? "car" : "cdr";
   };
@@ -419,16 +421,16 @@ var SPEECH = (function() {
     "max"
   ];
   for (var i = 0; i < mathtags.length; i++) {
-    dict[mathtags[i]] = (function(tag) {
+    core[mathtags[i]] = (function(tag) {
       return function() {
         return tag.apply(null, supertrim(arguments[0]).split(" "));
       };
     })(Math[mathtags[i]]);
   }
-  dict["PI"] = function() {
+  core["PI"] = function() {
     return Math.PI;
   };
-  dict["E"] = function() {
+  core["E"] = function() {
     return Math.E;
   };
 
@@ -628,7 +630,13 @@ var SPEECH = (function() {
 
   return {
     evaluate: evaluate,
-    dict: dict,
+    core: core,
+    reset: function() {
+      dict = Object.assign({}, core);
+    },
+    clean: function() {
+      dict = null;
+    },
     supertrim: supertrim
   };
 })(); // end SPEECH
@@ -654,7 +662,9 @@ var refresh = function(e) {
 
   lastCode = text;
   var t0 = new Date().getTime();
+  SPEECH.reset();
   var code = SPEECH.evaluate(text);
+  SPEECH.clean();
   var t1 = new Date().getTime();
   document.getElementById("infos").innerHTML =
     "(" +
@@ -741,15 +751,17 @@ var load = function() {
 
 var swStatus = "checking";
 
-SPEECH.dict["sw-status"] = function() {
+SPEECH.core["sw-status"] = function() {
   return swStatus;
 };
 
-SPEECH.dict["page-exists?"] = function() {
+SPEECH.core["page-exists?"] = function() {
   var page = arguments[0].trim();
 
   return localStorage.getItem("ls-" + page) === null ? "cdr" : "car";
 };
+
+Object.freeze(SPEECH.core);
 
 if ("serviceWorker" in navigator) {
   // enable offline working
