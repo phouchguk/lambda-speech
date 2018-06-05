@@ -303,10 +303,10 @@ var SPEECH = (function() {
   */
 
   var preprocessing = function(s) {
-    LAMB_num = 0;
-    QUOT_num = 0;
+    //LAMB_num = 0;
+    //QUOT_num = 0;
     //COND_num = 0;
-    PAIR_num = 0;
+    //PAIR_num = 0;
     //ARRA_num = 0;
     s = s.replace(/'\(/g, "(quote _"); // '(x) -> (quote _x)
     return s;
@@ -318,10 +318,10 @@ var SPEECH = (function() {
     s = s.replace(/([_MAC_|_DEF_]\s*?)/g, "");
 
     //s = s.replace(/(_COND_\d+?)/g, cond_display);
-    LAMB_num = 0;
-    QUOT_num = 0;
+    //LAMB_num = 0;
+    //QUOT_num = 0;
     //COND_num = 0;
-    PAIR_num = 0;
+    //PAIR_num = 0;
     //ARRA_num = 0;
     return s;
   };
