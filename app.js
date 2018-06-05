@@ -58,6 +58,23 @@ var SPEECH = (function() {
       : "[" + f + " " + r + "]";
   };
 
+  var eval_require = function(s) {
+    var code, i, pages, pre;
+
+    pages = supertrim(s).split(" ");
+    pre = "";
+
+    for (i = 0; i < pages.length; i++) {
+      code = localStorage.getItem("ls-" + pages[i]);
+
+      if (code !== null) {
+        pre += code;
+      }
+    }
+
+    return pre;
+  };
+
   var eval_mac = function(s) {
     // (mac name body)
     var index = s.search(/\s/);
@@ -312,6 +329,11 @@ var SPEECH = (function() {
     //COND_num = 0;
     //PAIR_num = 0;
     //ARRA_num = 0;
+
+    if (s.startsWith("(require")) {
+      s = form_replace(s, "(require", eval_require);
+    }
+
     s = s.replace(/'\(/g, "(quote _"); // '(x) -> (quote _x)
     return s;
   };
@@ -685,7 +707,7 @@ var refresh = function(e) {
 codeForm.style.display = "none";
 
 codeEl.addEventListener("keydown", function(e) {
-  if (e.key === "`") {
+  if (e.key === "`" || e.key === "§") {
     e.preventDefault();
   }
 });
@@ -693,7 +715,7 @@ codeEl.addEventListener("keydown", function(e) {
 codeEl.addEventListener("keyup", refresh);
 
 document.body.addEventListener("keyup", function(e) {
-  if (e.key !== "`") {
+  if (!(e.key === "`" || e.key === "§")) {
     return;
   }
 
@@ -731,11 +753,21 @@ var load = function() {
   if (code === null) {
     if (name === "default") {
       code =
-        '<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))\n\n(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))';
+        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))';
+
+      localStorage.setItem(
+        "ls-core",
+        "(def cons (lambda (:x :y :z) (:z :x :y)))\n(def car (lambda (:z) (:z (lambda (:x :y) :x))))\n(def cdr (lambda (:z) (:z (lambda (:x :y) :y))))\n(def nil? (lambda (:n) (:n (lambda (:x) cdr) car)))\n(def nil (lambda (:f :x) :x))"
+      );
+
+      localStorage.setItem(
+        "ls-bootstrap-helper",
+        '(def icon (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))'
+      );
 
       localStorage.setItem(
         "ls-test",
-        '<h1>Test page</h1>\n<p>This is the test page. Go back to <a href="#">home</a>.</p>\n<p><a href="#newpage">This page</a> doesn\'t exist yet. But if you click the link it will be created.</p>'
+        '(require core)\n\n<h1>Test page</h1>\n<p>This is the test page. Go back to <a href="#">home</a>.</p>\n<p><a href="#newpage">This page</a> doesn\'t exist yet. But if you click the link it will be created.</p>'
       );
     } else {
       code = "<h1>" + name + "</h1>\n<p>This is a new '" + name + "' page.</p>";
