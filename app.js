@@ -783,6 +783,13 @@ var load = function() {
 
 var swStatus = "checking";
 
+SPEECH.core["log!"] = function() {
+  var msg = arguments[0].trim();
+  console.log(msg);
+
+  return msg;
+};
+
 SPEECH.core["sw-status"] = function() {
   return swStatus;
 };
