@@ -1,4 +1,6 @@
 var SPEECH = (function() {
+  var evts = {};
+
   var core = {},
     dict = null,
     LAMB_num = 0;
@@ -125,7 +127,7 @@ var SPEECH = (function() {
 
           var _args_ = args.slice(vals.length).join(" ");
           bod = eval_lambda("(" + _args_ + ") " + bod);
-        } else {
+        } else if (args.length > 0) {
           lastIndex = args.length - 1;
           isRest = vals.length > args.length && args[lastIndex].startsWith("&");
 
@@ -401,6 +403,18 @@ var SPEECH = (function() {
     }, time);
   };
 
+  core["listen!"] = function() {
+    var args = supertrim(arguments[0]).split(" ");
+
+    evts[args[0]].push({
+      id: args[1],
+      fn: args[2],
+      args: args.slice(3).join(" ")
+    });
+
+    return "_DEF_";
+  };
+
   core["log!"] = function() {
     var msg = arguments[0].trim();
     console.log(msg);
@@ -412,10 +426,39 @@ var SPEECH = (function() {
     return swStatus;
   };
 
-  core["page-exists?"] = function() {
-    var page = arguments[0].trim();
+  core["get-url-hash"] = function() {
+    return window.location.hash.substr(1);
+  };
 
-    return localStorage.getItem("ls-" + page) === null ? "cdr" : "car";
+  core["get-time"] = function() {
+    return new Date().getTime();
+  };
+
+  //// LOCAL STORAGE
+  core["ls-item-exists?"] = function() {
+    var key = arguments[0].trim();
+
+    return localStorage.getItem(key) === null ? "cdr" : "car";
+  };
+
+  core["ls-get-item"] = function() {
+    var key = arguments[0].trim();
+
+    return localStorage.getItem(key);
+  };
+
+  core["ls-remove-item!"] = function() {
+    var key = arguments[0].trim();
+    localStorage.removeItem(key);
+
+    return "_DEF_";
+  };
+
+  core["ls-set-item!"] = function() {
+    var args = supertrim(arguments[0]).split(" ");
+    localStorage.setItem(args[0], args.slice(1).join(" "));
+
+    return "_DEF_";
   };
 
   //// MATHS
@@ -701,26 +744,63 @@ var SPEECH = (function() {
   //// DICTIONARY end
   */
 
-  Object.freeze(core);
+  var evtListen = function(t) {
+    return function(e) {
+      var i, id;
+
+      if (!evts[t]) {
+        return;
+      }
+
+      for (i = 0; i < evts[t].length; i++) {
+        id = evts[t][i].id.substring(1);
+
+        if (
+          (evts[t][i].id.startsWith("#") && e.target.id === id) ||
+          (evts[t][i].id.startsWith(".") &&
+            e.target.className.split(" ").indexOf(id) > -1)
+        ) {
+          SPEECH.evaluate(
+            "(" +
+              evts[t][i].fn +
+              " " +
+              e.target.id +
+              " " +
+              evts[t][i].args +
+              ")"
+          );
+        }
+      }
+    };
+  };
 
   return {
     evaluate: evaluate,
+
+    init: function() {
+      document.body.addEventListener("click", evtListen("click"));
+      document.body.addEventListener("keyup", evtListen("keyup"));
+    },
+
     reset: function() {
+      var evtNames;
+
+      evtNames = ["click", "keyup"];
+
+      for (var i = 0; i < evtNames.length; i++) {
+        evts[evtNames[i]] = [];
+      }
+
       dict = Object.assign({}, core);
     },
-    clean: function() {
-      dict = null;
-    },
+
     supertrim: supertrim
   };
 })(); // end SPEECH
 
-var codeForm = document.getElementById("code-form");
-var codeEl = document.getElementById("code");
+var codeForm, codeEl;
 var lastCode = "";
 var name = "default";
-
-var wsTimeout = null;
 
 var refresh = function(e) {
   var text = codeEl.value;
@@ -729,15 +809,9 @@ var refresh = function(e) {
     return;
   }
 
-  if (wsTimeout !== null) {
-    clearTimeout(wsTimeout);
-    wsTimeout = null;
-  }
-
   lastCode = text;
   var t0 = new Date().getTime();
 
-  SPEECH.clean();
   SPEECH.reset();
   var code = SPEECH.evaluate(text);
 
@@ -758,29 +832,38 @@ var refresh = function(e) {
   }
 };
 
-codeForm.style.display = "none";
+var init = function() {
+  codeForm = document.getElementById("code-form");
+  codeEl = document.getElementById("code");
 
-codeEl.addEventListener("keydown", function(e) {
-  if (e.key === "`" || e.key === "§") {
-    e.preventDefault();
-  }
-});
+  codeForm.style.display = "none";
 
-codeEl.addEventListener("keyup", refresh);
+  codeEl.addEventListener("keydown", function(e) {
+    if (e.key === "`" || e.key === "§") {
+      e.preventDefault();
+    }
+  });
 
-document.body.addEventListener("keyup", function(e) {
-  if (!(e.key === "`" || e.key === "§")) {
-    return;
-  }
+  codeEl.addEventListener("keyup", refresh);
 
-  if (codeForm.style.display === "none") {
-    codeForm.style.display = "";
-    codeEl.focus();
-  } else {
-    codeEl.blur();
-    codeForm.style.display = "none";
-  }
-});
+  document.body.addEventListener("keyup", function(e) {
+    if (!(e.key === "`" || e.key === "§")) {
+      return;
+    }
+
+    if (codeForm.style.display === "none") {
+      codeForm.style.display = "";
+      codeEl.focus();
+    } else {
+      codeEl.blur();
+      codeForm.style.display = "none";
+    }
+  });
+
+  SPEECH.init();
+
+  load();
+};
 
 // load different code for every 'page'
 var load = function() {
@@ -797,17 +880,12 @@ var load = function() {
     name = hashName;
   }
 
-  if (wsTimeout !== null) {
-    clearTimeout(wsTimeout);
-    wsTimeout = null;
-  }
-
   code = localStorage.getItem("ls-" + name);
 
   if (code === null) {
     if (name === "default") {
       code =
-        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p id="test">Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n<p>((lambda (:x :y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)</p>\n\n<p>((lambda (:x &:y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)</p>\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n   (inner-html! test :x)))\n\n(def t/o\n (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))';
+        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p id="test">Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (:x :y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)\n((lambda (:x &:y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup>) this is a lot of arguments)</p>\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n   (inner-html! test :x)))\n\n(def t/o\n (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))';
 
       localStorage.setItem(
         "ls-core",
@@ -844,18 +922,16 @@ if ("serviceWorker" in navigator) {
       function(registration) {
         // Registration was successful
         swStatus = "ok";
-        load();
       },
       function(err) {
         // registration failed :(
         swStatus = "ServiceWorker registration failed: " + err;
-        load();
       }
     );
   });
 } else {
   swStatus = "unavailable";
-  document.addEventListener("DOMContentLoaded", load);
 }
 
-window.addEventListener("hashchange", load);
+document.addEventListener("DOMContentLoaded", init);
+//window.addEventListener("hashchange", load);
