@@ -109,9 +109,11 @@ var SPEECH = (function() {
 
     for (var i = 0; i < args.length; i++)
       reg_args[i] = new RegExp(args[i], "g");
+
     dict[name] = function() {
       var valStr = supertrim(arguments[0]);
       var vals = valStr === "" ? [] : valStr.split(" ");
+
       return (function(bod) {
         var i, isRest, lastIndex;
 
@@ -124,12 +126,16 @@ var SPEECH = (function() {
           var _args_ = args.slice(vals.length).join(" ");
           bod = eval_lambda("(" + _args_ + ") " + bod);
         } else {
-          isRest = vals.length > args.length;
           lastIndex = args.length - 1;
+          isRest = vals.length > args.length && args[lastIndex].startsWith("&");
+
           // total call
           for (i = 0; i < args.length; i++) {
             if (isRest && i === lastIndex) {
-              bod = bod.replace(reg_args[i], vals.slice(i).join(" "));
+              bod = bod.replace(
+                new RegExp(args[i].substring(1), "g"),
+                vals.slice(i).join(" ")
+              );
             } else {
               bod = bod.replace(reg_args[i], vals[i]);
             }
@@ -801,7 +807,7 @@ var load = function() {
   if (code === null) {
     if (name === "default") {
       code =
-        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p id="test">Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))\n\n(def called-later\n (lambda (:x)\n   (log! I was called after 3 seconds)\n   (inner-html! test :x)))\n\n(def t/o\n (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))';
+        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p id="test">Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n<p>((lambda (:x :y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)</p>\n\n<p>((lambda (:x &:y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)</p>\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n   (inner-html! test :x)))\n\n(def t/o\n (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))';
 
       localStorage.setItem(
         "ls-core",
