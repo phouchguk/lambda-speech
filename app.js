@@ -367,6 +367,51 @@ var SPEECH = (function() {
     return "DICT: [" + index + "] [" + str.substring(0, str.length - 2) + "]";
   };
 
+  core["inner-html!"] = function() {
+    var args = supertrim(arguments[0]).split(" ");
+    var innards = args.slice(1).join(" ");
+
+    document.getElementById(args[0]).innerHTML = innards;
+
+    return innards;
+  };
+
+  core["clear-timeout!"] = function() {
+    var to = arguments[0];
+    clearTimeout(to);
+
+    return "_DEF_";
+  };
+
+  core["set-timeout!"] = function() {
+    var args = supertrim(arguments[0]).split(" ");
+    var fn = args[0];
+    var time = parseFloat(args[1]);
+    var cbArgs = args.slice(2).join(" ");
+
+    return setTimeout(function() {
+      // evaluated for side-effects only
+      evaluate("(" + fn + " " + cbArgs + ")");
+    }, time);
+  };
+
+  core["log!"] = function() {
+    var msg = arguments[0].trim();
+    console.log(msg);
+
+    return msg;
+  };
+
+  core["sw-status"] = function() {
+    return swStatus;
+  };
+
+  core["page-exists?"] = function() {
+    var page = arguments[0].trim();
+
+    return localStorage.getItem("ls-" + page) === null ? "cdr" : "car";
+  };
+
   //// MATHS
 
   core["+"] = function() {
@@ -650,9 +695,10 @@ var SPEECH = (function() {
   //// DICTIONARY end
   */
 
+  Object.freeze(core);
+
   return {
     evaluate: evaluate,
-    core: core,
     reset: function() {
       dict = Object.assign({}, core);
     },
@@ -684,9 +730,11 @@ var refresh = function(e) {
 
   lastCode = text;
   var t0 = new Date().getTime();
+
+  SPEECH.clean();
   SPEECH.reset();
   var code = SPEECH.evaluate(text);
-  SPEECH.clean();
+
   var t1 = new Date().getTime();
   document.getElementById("infos").innerHTML =
     "(" +
@@ -753,7 +801,7 @@ var load = function() {
   if (code === null) {
     if (name === "default") {
       code =
-        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p>Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))';
+        '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p><p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair (cons Hello World))\n<p>(cdr (my-pair))</p>\n\n<p id="test">Service worker: (icon thumbs-(((= ok (sw-status)) (cons (lambda () up success) (lambda () down danger))))) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (x y) <p><b>x</b> y<sup>\'(1)</sup> y<sup>\'(2)</sup></p>) this is a lot of arguments)\n\n(mac let (lambda (innards) (+ 1 2 3)))\n(let ((x 5) (y 7)) (* x y))\n\n(def called-later\n (lambda (:x)\n   (log! I was called after 3 seconds)\n   (inner-html! test :x)))\n\n(def t/o\n (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))';
 
       localStorage.setItem(
         "ls-core",
@@ -782,25 +830,6 @@ var load = function() {
 };
 
 var swStatus = "checking";
-
-SPEECH.core["log!"] = function() {
-  var msg = arguments[0].trim();
-  console.log(msg);
-
-  return msg;
-};
-
-SPEECH.core["sw-status"] = function() {
-  return swStatus;
-};
-
-SPEECH.core["page-exists?"] = function() {
-  var page = arguments[0].trim();
-
-  return localStorage.getItem("ls-" + page) === null ? "cdr" : "car";
-};
-
-Object.freeze(SPEECH.core);
 
 if ("serviceWorker" in navigator) {
   // enable offline working
