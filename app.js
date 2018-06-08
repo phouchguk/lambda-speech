@@ -345,6 +345,7 @@ var SPEECH = (function() {
     }
 
     s = s.replace(/'\(/g, "(quote _"); // '(x) -> (quote _x)
+
     return s;
   };
   var postprocessing = function(s) {
@@ -477,16 +478,6 @@ var SPEECH = (function() {
     console.log(msg);
 
     return msg;
-  };
-
-  // we can't insert tb content into the code stream so need to evaluate direct from element value
-  core["eval-el-val"] = function() {
-    var id, res;
-
-    var id = arguments[0].trim();
-    res = evaluate(document.getElementById(id).value);
-
-    return res.val;
   };
 
   core["sw-status"] = function() {
@@ -817,48 +808,14 @@ var SPEECH = (function() {
   //// DICTIONARY end
   */
 
-  /*
-  var evtListen = function(t) {
-    return function(e) {
-      var code, i, id;
-
-      if (!evts[t]) {
-        return;
-      }
-
-      for (i = 0; i < evts[t].length; i++) {
-        id = evts[t][i].id.substring(1);
-
-        if (
-          (evts[t][i].id.startsWith("#") && e.target.id === id) ||
-          (evts[t][i].id.startsWith(".") &&
-            e.target.className.split(" ").indexOf(id) > -1)
-        ) {
-          code = SPEECH.evaluate(
-            "(" +
-              evts[t][i].fn +
-              " " +
-              (t === "click" ? e.target.id : e.key) +
-              " " +
-              evts[t][i].args +
-              ")"
-          );
-
-          if (code.val === "cdr") {
-            console.log(e.target);
-            e.preventDefault();
-          }
-        }
-      }
-    };
-  };
-  */
-
   return {
     evaluate: evaluate,
 
     reset: function() {
       var evtNames;
+
+      LAMB_num = 0;
+      QUOT_num = 0;
 
       evtNames = ["click", "keydown", "keyup"];
 
@@ -907,21 +864,33 @@ var refresh = function(e) {
   }
 };
 
-var coreCode =
-  "(def cons\n (lambda (:x :y :z)\n   (:z :x :y)))\n\n(def car\n (lambda (:z)\n   (:z (lambda (:x :y) :x))))\n\n(def cdr\n (lambda (:z)\n  (:z (lambda (:x :y) :y))))\n\n(def nil\n (lambda (:f :x) :x))\n\n(def nil?\n (lambda (:n)\n   (:n (lambda (:x) cdr) car)))";
-
 var init = function() {
-  var code, core, res;
+  var defaultCode;
 
-  SPEECH.reset();
+  defaultCode = localStorage.getItem("ls-default");
 
-  code =
-    "(def console-toggle\n (lambda (:key)\n   (((= ` :key)\n           (cons\n                 (lambda () (toggle! code))\n                  (lambda ()))))))\n\n(def refresh\n (lambda (_)\n   (inner-html! view (eval-el-val code))))\n\n(def stop-console-key\n (lambda (:key)\n   (not (= ` :key))))\n\n(listen! keydown code stop-console-key)\n(listen! keyup code refresh)\n(listen! keyup body console-toggle)";
+  if (defaultCode === null) {
+    localStorage.setItem(
+      "ls-default",
+      '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p>\n<p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair\n (cons Hello World))\n\n<p>(cdr (my-pair))</p>\n\n(def sw-icon\n (icon thumbs-(((= ok (sw-status))\n                (cons\n                  (lambda () up success)\n                  (lambda () down danger))))))\n\n<p id="test">Service worker: (sw-icon) (sw-status)</p>\n\n<p>Go to <a href="#test">test page</a>.</p>\n\n(def alot-of-args this is a lot of arguments)\n\n((lambda (:x :y)\n   <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>)\n (alot-of-args))\n\n((lambda (:x &:y)\n   <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup>)\n (alot-of-args))\n\n(mac let\n (lambda (innards)\n   (+ 1 2 3)))\n\n(let ((x 5) (y 7))\n  (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n  (inner-html! test :x)))\n\n(def t/o (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))'
+    );
 
-  res = SPEECH.evaluate(coreCode + code);
-};
+    localStorage.setItem(
+      "ls-core",
+      "(def cons\n (lambda (:x :y :z)\n   (:z :x :y)))\n\n(def car\n (lambda (:z)\n   (:z (lambda (:x :y) :x))))\n\n(def cdr\n (lambda (:z)\n  (:z (lambda (:x :y) :y))))\n\n(def nil\n (lambda (:f :x) :x))\n\n(def nil?\n (lambda (:n)\n   (:n (lambda (:x) cdr) car)))"
+    );
 
-var initOld = function() {
+    localStorage.setItem(
+      "ls-bootstrap-helper",
+      '(def icon\n (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))'
+    );
+
+    localStorage.setItem(
+      "ls-test",
+      '<h1>Test page</h1>\n<p>This is the test page. Go back to <a href="#">home</a>.</p>\n<p><a href="#newpage">This page</a> doesn\'t exist yet. But if you click the link it will be created.</p>'
+    );
+  }
+
   codeForm = document.getElementById("code-form");
   codeEl = document.getElementById("code");
 
@@ -970,25 +939,7 @@ var load = function() {
   code = localStorage.getItem("ls-" + name);
 
   if (code === null) {
-    if (name === "default") {
-      code =
-        '(require bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p>\n<p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair\n (cons Hello World))\n\n<p>(cdr (my-pair))</p>\n\n(def sw-icon\n (icon thumbs-(((= ok (sw-status))\n                (cons\n                                                               (lambda () up success)\n                                                                (lambda () down danger))))))\n\n<p id="test">Service worker: (sw-icon) (sw-status)</p>\n<p>Go to <a href="#test">test page</a>.</p>\n\n((lambda (:x :y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)\n((lambda (:x &:y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup>) this is a lot of arguments)\n\n(mac let\n (lambda (innards)\n   (+ 1 2 3)))\n\n(let ((x 5) (y 7))\n  (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n    (inner-html! test :x)))\n\n(def t/o (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))';
-
-      localStorage.setItem("ls-core", coreCode);
-
-      localStorage.setItem(
-        "ls-bootstrap-helper",
-        '(def icon\n (lambda (:name :class) <span class="glyphicon glyphicon-:name text-:class"></span>))'
-      );
-
-      localStorage.setItem(
-        "ls-test",
-        '<h1>Test page</h1>\n<p>This is the test page. Go back to <a href="#">home</a>.</p>\n<p><a href="#newpage">This page</a> doesn\'t exist yet. But if you click the link it will be created.</p>'
-      );
-    } else {
-      code = "<h1>" + name + "</h1>\n<p>This is a new '" + name + "' page.</p>";
-    }
-
+    code = "<h1>" + name + "</h1>\n<p>This is a new '" + name + "' page.</p>";
     localStorage.setItem("ls-" + name, code);
   }
 
@@ -1018,4 +969,4 @@ if ("serviceWorker" in navigator) {
 }
 
 document.addEventListener("DOMContentLoaded", init);
-//window.addEventListener("hashchange", load);
+window.addEventListener("hashchange", load);

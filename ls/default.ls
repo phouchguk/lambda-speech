@@ -1,4 +1,4 @@
-(require bootstrap-helper)
+(require core bootstrap-helper)
 
 <h1>'(&lambda; speech)</h1>
 
@@ -16,14 +16,22 @@
 (def sw-icon
  (icon thumbs-(((= ok (sw-status))
                 (cons
-								  (lambda () up success)
-								  (lambda () down danger))))))
+                  (lambda () up success)
+                  (lambda () down danger))))))
 
 <p id="test">Service worker: (sw-icon) (sw-status)</p>
+
 <p>Go to <a href="#test">test page</a>.</p>
 
-((lambda (:x :y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>) this is a lot of arguments)
-((lambda (:x &:y) <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup>) this is a lot of arguments)
+(def alot-of-args this is a lot of arguments)
+
+((lambda (:x :y)
+   <p><b>:x</b> :y<sup>'(1)</sup> :y<sup>'(2)</sup></p>)
+ (alot-of-args))
+
+((lambda (:x &:y)
+   <p><b>:x</b> :y<sup>'(1)</sup> :y<sup>'(2)</sup>)
+ (alot-of-args))
 
 (mac let
  (lambda (innards)

@@ -7,7 +7,7 @@
 
 (def refresh
  (lambda (_)
-   (inner-html! view (eval-el-val code))))
+   (eval-el-val code view)))
 
 (def stop-console-key
  (lambda (:key)
