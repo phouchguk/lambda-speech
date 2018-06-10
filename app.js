@@ -878,12 +878,17 @@ var init = function() {
   if (defaultCode === null) {
     localStorage.setItem(
       "ls-default",
-      '(require core bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p>\n<p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair\n (cons Hello World))\n\n<p>(cdr (my-pair))</p>\n\n(def sw-icon\n (icon thumbs-(((= ok (sw-status))\n                (cons\n                  (lambda () up success)\n                  (lambda () down danger))))))\n\n<p id="test">Service worker: (sw-icon) (sw-status)</p>\n\n<p>Go to <a href="#test">test page</a>.</p>\n\n(def alot-of-args this is a lot of arguments)\n\n((lambda (:x :y)\n   <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>)\n (alot-of-args))\n\n((lambda (:x &:y)\n   <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup>)\n (alot-of-args))\n\n(mac let\n (lambda (innards)\n   (+ 1 2 3)))\n\n(let ((x 5) (y 7))\n  (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n  (inner-html! test :x)))\n\n(def t/o (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))'
+      '(require core mapreduce bootstrap-helper)\n\n<h1>\'(&lambda; speech)</h1>\n\n<p>Go to the <a href="http://lambdaway.free.fr/workshop/?view=lambdaspeech">official \'(&lambda; speech) site</a>.</p>\n<p class="text-muted">Press ` or § to view console.</p>\n<p>You can create a new page by appending #pagename to the url.</p>\n\n(+ 1 2 3 4 5)\n\n(def my-pair\n (cons Hello World))\n\n<p>(cdr (my-pair))</p>\n\n(def sw-icon\n (icon thumbs-(((= ok (sw-status))\n                (cons\n                  (lambda () up success)\n                  (lambda () down danger))))))\n\n<p id="test">Service worker: (sw-icon) (sw-status)</p>\n\n<p>Go to <a href="#test">test page</a>.</p>\n\n(def alot-of-args this is a lot of arguments)\n\n((lambda (:x :y)\n   <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup></p>)\n (alot-of-args))\n\n((lambda (:x &:y)\n   <p><b>:x</b> :y<sup>\'(1)</sup> :y<sup>\'(2)</sup>)\n (alot-of-args))\n\n(mac let\n (lambda (innards)\n   (+ 1 2 3)))\n\n(let ((x 5) (y 7))\n  (* x y))\n\n(def called-later\n (lambda (&:x)\n   (log! I was called after 3 seconds)\n   (inner-html! test :x)))\n\n(def t/o (set-timeout! called-later 3000 (icon time success) Element contents updated.))\n\n\'(clear-timeout! (t/o))\n\n<br>\n(def my-list\n (cons 1 (cons 2 (cons 3 (cons 4 (cons 5 nil))))))\n\n(foldl + 0 (mapr (lambda (:x) (* :x 2)) (my-list)))\n(foldl + 0 (mapr identity (my-list)))\n(foldl + 0 (mapr identity (reverse (my-list))))'
     );
 
     localStorage.setItem(
       "ls-core",
       "(def cons\n (lambda (:x :y :z)\n   (:z :x :y)))\n\n(def car\n (lambda (:z)\n   (:z (lambda (:x :y) :x))))\n\n(def cdr\n (lambda (:z)\n  (:z (lambda (:x :y) :y))))\n\n(def nil\n (lambda (:f :x) :x))\n\n(def nil?\n (lambda (:n)\n   (:n (lambda (&:x) cdr) car)))"
+    );
+
+    localStorage.setItem(
+      "ls-mapreduce",
+      "(def foldl\n (lambda (:f :acc :xs)\n   (((nil? :xs)\n      (cons\n       (lambda (_ :acc _) :acc)\n       (lambda (:f :acc :xs)\n         (foldl :f (:f :acc (car :xs)) (cdr :xs))))\n     ) :f :acc :xs)))\n\n(def mapr\n (lambda (:f :xs)\n   (foldl\n   ((lambda (:f :acc :x) (cons (:f :x) :acc)) :f)\n    nil\n    :xs)))\n\n(def identity\n (lambda (:x) :x))\n\n(def reverse\n (lambda (:xs)\n   (mapr identity :xs)))\n\n(def map\n (lambda (:f :xs)\n   (reverse (mapr :f :xs))))"
     );
 
     localStorage.setItem(

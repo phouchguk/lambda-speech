@@ -1,4 +1,4 @@
-(require core bootstrap-helper)
+(require core mapreduce bootstrap-helper)
 
 <h1>'(&lambda; speech)</h1>
 
@@ -48,3 +48,11 @@
 (def t/o (set-timeout! called-later 3000 (icon time success) Element contents updated.))
 
 '(clear-timeout! (t/o))
+
+<br>
+(def my-list
+ (cons 1 (cons 2 (cons 3 (cons 4 (cons 5 nil))))))
+
+(foldl + 0 (mapr (lambda (:x) (* :x 2)) (my-list)))
+(foldl + 0 (mapr identity (my-list)))
+(foldl + 0 (mapr identity (reverse (my-list))))
