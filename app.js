@@ -110,8 +110,9 @@ var SPEECH = (function() {
       name = "_LAMB_" + LAMB_num++,
       reg_args = [];
 
-    for (var i = 0; i < args.length; i++)
-      reg_args[i] = new RegExp(args[i], "g");
+    for (var i = 0; i < args.length; i++) {
+      reg_args[i] = args[i] === "_" ? null : new RegExp(args[i], "g");
+    }
 
     dict[name] = function() {
       var valStr = supertrim(arguments[0]);
@@ -123,8 +124,11 @@ var SPEECH = (function() {
         //bod = eval_conds(bod, reg_args, vals);
         if (vals.length < args.length) {
           // partial call
-          for (i = 0; i < vals.length; i++)
-            bod = bod.replace(reg_args[i], vals[i]);
+          for (i = 0; i < vals.length; i++) {
+            if (reg_args[i] !== null) {
+              bod = bod.replace(reg_args[i], vals[i]);
+            }
+          }
 
           var _args_ = args.slice(vals.length).join(" ");
           bod = eval_lambda("(" + _args_ + ") " + bod);
@@ -140,7 +144,9 @@ var SPEECH = (function() {
                 vals.slice(i).join(" ")
               );
             } else {
-              bod = bod.replace(reg_args[i], vals[i]);
+              if (reg_args[i] !== null) {
+                bod = bod.replace(reg_args[i], vals[i]);
+              }
             }
           }
         }
@@ -334,8 +340,8 @@ var SPEECH = (function() {
   */
 
   var preprocessing = function(s) {
-    LAMB_num = 0;
-    QUOT_num = 0;
+    //LAMB_num = 0;
+    //QUOT_num = 0;
     //COND_num = 0;
     //PAIR_num = 0;
     //ARRA_num = 0;
@@ -877,7 +883,7 @@ var init = function() {
 
     localStorage.setItem(
       "ls-core",
-      "(def cons\n (lambda (:x :y :z)\n   (:z :x :y)))\n\n(def car\n (lambda (:z)\n   (:z (lambda (:x :y) :x))))\n\n(def cdr\n (lambda (:z)\n  (:z (lambda (:x :y) :y))))\n\n(def nil\n (lambda (:f :x) :x))\n\n(def nil?\n (lambda (:n)\n   (:n (lambda (:x) cdr) car)))"
+      "(def cons\n (lambda (:x :y :z)\n   (:z :x :y)))\n\n(def car\n (lambda (:z)\n   (:z (lambda (:x :y) :x))))\n\n(def cdr\n (lambda (:z)\n  (:z (lambda (:x :y) :y))))\n\n(def nil\n (lambda (:f :x) :x))\n\n(def nil?\n (lambda (:n)\n   (:n (lambda (&:x) cdr) car)))"
     );
 
     localStorage.setItem(

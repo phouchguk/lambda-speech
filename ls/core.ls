@@ -15,4 +15,4 @@
 
 (def nil?
  (lambda (:n)
-   (:n (lambda (:x) cdr) car)))
+   (:n (lambda (&:x) cdr) car)))
